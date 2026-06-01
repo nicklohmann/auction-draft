@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { myRoster, spent, remaining } from '../stores/draftStore'
 
-const CORE_SPOTS = 11 // 8 starters + 3 key bench
+const CORE_SPOTS = 11
 
 const positionOrder = ['QB', 'RB', 'WR', 'TE']
 
@@ -13,21 +13,40 @@ const sortedRoster = computed(() => {
 })
 
 const corePlayersDrafted = computed(() => {
-  // Count core players as the top ones by KTC value
-  const sorted = [...myRoster.value].sort((a, b) => b.ktcValue - a.ktcValue)
-  return Math.min(sorted.length, CORE_SPOTS)
+  return Math.min(myRoster.value.length, CORE_SPOTS)
 })
 
 const coreRemaining = computed(() => CORE_SPOTS - corePlayersDrafted.value)
 
 const avgPerCoreRemaining = computed(() => {
   if (coreRemaining.value <= 0) return 0
-  // Reserve $1 per non-core roster spot (27 - 11 = 16 bench spots)
   const benchSpots = 27 - CORE_SPOTS
   const reservedForBench = benchSpots * 1
   const budgetForCore = remaining.value - reservedForBench
   return Math.max(1, Math.round(budgetForCore / coreRemaining.value))
 })
+
+function getValueColor(pricePaid: number, suggestedValue: number): string {
+  if (suggestedValue === 0) return 'white'
+  const ratio = pricePaid / suggestedValue
+
+  if (ratio <= 0.5) return '#1b5e20'       // dark green - massive steal
+  if (ratio <= 0.7) return '#2e7d32'       // green - great value
+  if (ratio <= 0.85) return '#66bb6a'      // light green - good value
+  if (ratio <= 0.95) return '#a5d6a7'      // very light green - slight value
+  if (ratio <= 1.05) return '#ffffff'      // white - even
+  if (ratio <= 1.2) return '#ef9a9a'       // light red - slight overpay
+  if (ratio <= 1.4) return '#e53935'       // red - overpay
+  return '#b71c1c'                          // dark red - big overpay
+}
+
+function getValueText(pricePaid: number, suggestedValue: number): string {
+  if (suggestedValue === 0) return '-'
+  const saved = suggestedValue - pricePaid
+  if (saved > 0) return `+$${saved}`
+  if (saved < 0) return `-$${Math.abs(saved)}`
+  return 'Even'
+}
 </script>
 
 <template>
@@ -81,8 +100,8 @@ const avgPerCoreRemaining = computed(() => {
           <td>{{ player.ktcValue }}</td>
           <td>${{ player.value }}</td>
           <td>${{ player.pricePaid }}</td>
-          <td :class="player.pricePaid <= player.value ? 'good-value' : 'overpaid'">
-            {{ player.pricePaid <= player.value ? '✅ Good value' : '⚠️ Overpaid' }}
+          <td :style="{ color: getValueColor(player.pricePaid, player.value), fontWeight: 'bold' }">
+            {{ getValueText(player.pricePaid, player.value) }}
           </td>
         </tr>
       </tbody>
@@ -103,6 +122,4 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 10px; text-align: left; border-bottom: 1px solid #16213e; }
 th { background: #16213e; color: #4fc3f7; }
 tr:hover { background: #16213e; }
-.good-value { color: #4caf50; }
-.overpaid { color: #f44336; }
 </style>
