@@ -6,7 +6,6 @@ const search = ref('')
 const positionFilter = ref('ALL')
 const showDraftModal = ref(false)
 const selectedPlayer = ref('')
-const draftedBy = ref('Me')
 const pricePaid = ref(1)
 
 const filteredPlayers = computed(() => {
@@ -19,13 +18,16 @@ const filteredPlayers = computed(() => {
 function openDraftModal(playerName: string) {
   selectedPlayer.value = playerName
   pricePaid.value = 1
-  draftedBy.value = 'Me'
   showDraftModal.value = true
 }
 
 function confirmDraft() {
-  draftPlayer(selectedPlayer.value, draftedBy.value, pricePaid.value)
+  draftPlayer(selectedPlayer.value, 'Me', pricePaid.value)
   showDraftModal.value = false
+}
+
+function draftedByOther(playerName: string) {
+  draftPlayer(playerName, 'Other', 1)
 }
 </script>
 
@@ -33,7 +35,6 @@ function confirmDraft() {
   <div class="draft-board">
     <h2>Draft Board</h2>
 
-    <!-- Filters -->
     <div class="filters">
       <input v-model="search" placeholder="Search players..." />
       <select v-model="positionFilter">
@@ -46,7 +47,6 @@ function confirmDraft() {
       <span>{{ filteredPlayers.length }} players available</span>
     </div>
 
-    <!-- Player Table -->
     <table>
       <thead>
         <tr>
@@ -65,31 +65,24 @@ function confirmDraft() {
           <td>{{ player.team }}</td>
           <td>{{ player.ktcValue }}</td>
           <td>${{ player.value }}</td>
-          <td>
-            <button @click="openDraftModal(player.name)">Draft</button>
+          <td class="actions">
+            <button class="btn-draft" @click="openDraftModal(player.name)">Draft</button>
+            <button class="btn-other" @click="draftedByOther(player.name)">✕</button>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <!-- Draft Modal -->
     <div v-if="showDraftModal" class="modal-overlay">
       <div class="modal">
         <h3>Draft {{ selectedPlayer }}</h3>
-        <div>
-          <label>Drafted By:</label>
-          <select v-model="draftedBy">
-            <option value="Me">Me</option>
-            <option value="Other">Other Team</option>
-          </select>
-        </div>
         <div>
           <label>Price Paid: $</label>
           <input type="number" v-model="pricePaid" min="1" />
         </div>
         <div class="modal-buttons">
-          <button @click="confirmDraft">Confirm</button>
-          <button @click="showDraftModal = false">Cancel</button>
+          <button class="btn-draft" @click="confirmDraft">Confirm</button>
+          <button class="btn-cancel" @click="showDraftModal = false">Cancel</button>
         </div>
       </div>
     </div>
@@ -97,86 +90,22 @@ function confirmDraft() {
 </template>
 
 <style scoped>
-.draft-board {
-  padding: 20px;
-}
-
-.filters {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  align-items: center;
-}
-
-input, select {
-  padding: 8px;
-  background: #16213e;
-  color: white;
-  border: 1px solid #0f3460;
-  border-radius: 4px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #16213e;
-}
-
-th {
-  background: #16213e;
-  color: #4fc3f7;
-}
-
-tr:hover {
-  background: #16213e;
-}
-
-button {
-  padding: 5px 10px;
-  background: #0f3460;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #4fc3f7;
-  color: black;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.modal {
-  background: #1a1a2e;
-  padding: 30px;
-  border-radius: 8px;
-  border: 1px solid #0f3460;
-  min-width: 300px;
-}
-
-.modal div {
-  margin: 15px 0;
-}
-
-.modal-buttons {
-  display: flex;
-  gap: 10px;
-}
+.draft-board { padding: 20px; }
+.filters { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+input, select { padding: 8px; background: #16213e; color: white; border: 1px solid #0f3460; border-radius: 4px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px; text-align: left; border-bottom: 1px solid #16213e; }
+th { background: #16213e; color: #4fc3f7; }
+tr:hover { background: #16213e; }
+.actions { display: flex; gap: 8px; }
+.btn-draft { padding: 5px 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.btn-draft:hover { background: #43a047; }
+.btn-other { padding: 5px 10px; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-other:hover { background: #e53935; }
+.btn-cancel { padding: 5px 12px; background: #424242; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.btn-cancel:hover { background: #616161; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal { background: #1a1a2e; padding: 30px; border-radius: 8px; border: 1px solid #0f3460; min-width: 300px; }
+.modal div { margin: 15px 0; }
+.modal-buttons { display: flex; gap: 10px; }
 </style>
