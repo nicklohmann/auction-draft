@@ -19,6 +19,7 @@ onMounted(() => {
       <nav>
         <button @click="router.push('/')">Draft Board</button>
         <button @click="router.push('/roster')">My Roster</button>
+        <button @click="router.push('/log')">Draft Log</button>
       </nav>
     </div>
 

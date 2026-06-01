@@ -4,9 +4,7 @@ import { players, draftPlayer } from '../stores/draftStore'
 
 const search = ref('')
 const positionFilter = ref('ALL')
-const showDraftModal = ref(false)
-const selectedPlayer = ref('')
-const pricePaid = ref(1)
+const prices = ref<Record<string, string>>({})
 
 const filteredPlayers = computed(() => {
   return players.value
@@ -15,19 +13,16 @@ const filteredPlayers = computed(() => {
     .filter(p => p.name.toLowerCase().includes(search.value.toLowerCase()))
 })
 
-function openDraftModal(playerName: string) {
-  selectedPlayer.value = playerName
-  pricePaid.value = 1
-  showDraftModal.value = true
+function confirmMe(playerName: string) {
+  const price = parseInt(prices.value[playerName] || '1')
+  draftPlayer(playerName, 'Me', price)
+  delete prices.value[playerName]
 }
 
-function confirmDraft() {
-  draftPlayer(selectedPlayer.value, 'Me', pricePaid.value)
-  showDraftModal.value = false
-}
-
-function draftedByOther(playerName: string) {
-  draftPlayer(playerName, 'Other', 1)
+function confirmOther(playerName: string) {
+  const price = parseInt(prices.value[playerName] || '1')
+  draftPlayer(playerName, 'Other', price)
+  delete prices.value[playerName]
 }
 </script>
 
@@ -66,26 +61,20 @@ function draftedByOther(playerName: string) {
           <td>{{ player.ktcValue }}</td>
           <td>${{ player.value }}</td>
           <td class="actions">
-            <button class="btn-draft" @click="openDraftModal(player.name)">Draft</button>
-            <button class="btn-other" @click="draftedByOther(player.name)">✕</button>
+            <input
+              class="price-input"
+              type="number"
+              v-model="prices[player.name]"
+              placeholder="$"
+              min="1"
+              @keyup.enter="confirmMe(player.name)"
+            />
+            <button class="btn-draft" @click="confirmMe(player.name)">Mine</button>
+            <button class="btn-other" @click="confirmOther(player.name)">✕</button>
           </td>
         </tr>
       </tbody>
     </table>
-
-    <div v-if="showDraftModal" class="modal-overlay">
-      <div class="modal">
-        <h3>Draft {{ selectedPlayer }}</h3>
-        <div>
-          <label>Price Paid: $</label>
-          <input type="number" v-model="pricePaid" min="1" />
-        </div>
-        <div class="modal-buttons">
-          <button class="btn-draft" @click="confirmDraft">Confirm</button>
-          <button class="btn-cancel" @click="showDraftModal = false">Cancel</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -97,15 +86,10 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: 10px; text-align: left; border-bottom: 1px solid #16213e; }
 th { background: #16213e; color: #4fc3f7; }
 tr:hover { background: #16213e; }
-.actions { display: flex; gap: 8px; }
+.actions { display: flex; gap: 8px; align-items: center; }
+.price-input { width: 55px; padding: 4px; text-align: center; }
 .btn-draft { padding: 5px 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; }
 .btn-draft:hover { background: #43a047; }
 .btn-other { padding: 5px 10px; background: #b71c1c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
 .btn-other:hover { background: #e53935; }
-.btn-cancel { padding: 5px 12px; background: #424242; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.btn-cancel:hover { background: #616161; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.modal { background: #1a1a2e; padding: 30px; border-radius: 8px; border: 1px solid #0f3460; min-width: 300px; }
-.modal div { margin: 15px 0; }
-.modal-buttons { display: flex; gap: 10px; }
 </style>
