@@ -16,24 +16,21 @@ export interface RosterPlayer {
   position: string
   team: string
   ktcValue: number
+  value: number
   pricePaid: number
 }
 
-// Budget
 export const budget = ref(500)
 export const spent = ref(0)
 export const remaining = computed(() => budget.value - spent.value)
 
-// Players
 export const players = ref<Player[]>([])
 export const myRoster = ref<RosterPlayer[]>([])
 
-// Load players from CSV
 export async function loadPlayers() {
   const response = await fetch('/ktc_auction_final.csv')
   const text = await response.text()
   const lines = text.trim().split('\n')
-  const headers = lines[0].split(',')
 
   players.value = lines.slice(1).map(line => {
     const values = line.split(',')
@@ -50,7 +47,6 @@ export async function loadPlayers() {
   })
 }
 
-// Draft a player
 export function draftPlayer(playerName: string, draftedBy: string, pricePaid: number) {
   const player = players.value.find(p => p.name === playerName)
   if (!player) return
@@ -66,6 +62,7 @@ export function draftPlayer(playerName: string, draftedBy: string, pricePaid: nu
       position: player.position,
       team: player.team,
       ktcValue: player.ktcValue,
+      value: player.value,
       pricePaid
     })
   }

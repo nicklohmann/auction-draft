@@ -51,8 +51,8 @@ const sortedRoster = () => {
           <td>{{ player.team }}</td>
           <td>{{ player.ktcValue }}</td>
           <td>${{ player.pricePaid }}</td>
-          <td :class="player.pricePaid <= player.ktcValue / 100 ? 'good-value' : 'overpaid'">
-            {{ player.pricePaid <= player.ktcValue / 100 ? '✅' : '⚠️' }}
+          <td :class="player.pricePaid <= player.value ? 'good-value' : 'overpaid'">
+            {{ player.pricePaid <= player.value ? '✅ Good value' : '⚠️ Overpaid' }}
           </td>
         </tr>
       </tbody>
