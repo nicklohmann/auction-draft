@@ -31,7 +31,7 @@ export interface DraftLogEntry {
   draftedBy: string
 }
 
-export const budget = ref(500)
+export const budget = ref(300)
 export const spent = ref(0)
 export const remaining = computed(() => budget.value - spent.value)
 
@@ -63,7 +63,7 @@ export async function loadPlayers() {
       position: values[1],
       team: values[2],
       ktcValue: parseInt(values[3]),
-      value: parseInt(values[4]),
+      value: Math.round(parseInt(values[4]) * 0.6),
       drafted: false,
       draftedBy: '',
       pricePaid: 0
@@ -109,23 +109,19 @@ export function undraftPlayer(playerName: string) {
   const player = players.value.find(p => p.name === playerName)
   if (!player) return
 
-  // Restore player to board
   player.drafted = false
   player.draftedBy = ''
   player.pricePaid = 0
 
-  // Remove from draft log
   const logIndex = draftLog.value.findIndex(e => e.name === playerName)
   if (logIndex !== -1) {
     const entry = draftLog.value[logIndex]
 
-    // Remove from allDrafted market tracking
     const marketIndex = allDrafted.value.findIndex(
       d => d.position === entry.position && d.pricePaid === entry.pricePaid
     )
     if (marketIndex !== -1) allDrafted.value.splice(marketIndex, 1)
 
-    // If it was my pick restore budget
     if (entry.draftedBy === 'Me') {
       spent.value -= entry.pricePaid
       myRoster.value = myRoster.value.filter(p => p.name !== playerName)
@@ -133,17 +129,16 @@ export function undraftPlayer(playerName: string) {
 
     draftLog.value.splice(logIndex, 1)
 
-    // Renumber picks
     draftLog.value.forEach((e, i) => e.pick = i + 1)
   }
 }
 
-export const totalSpentByAll = computed(() => 
+export const totalSpentByAll = computed(() =>
   allDrafted.value.reduce((sum, p) => sum + p.pricePaid, 0)
 )
 
 export const avgOtherTeamRemaining = computed(() => {
   const otherTeamsSpent = totalSpentByAll.value - spent.value
-  const otherTeamsBudget = 11 * 500
+  const otherTeamsBudget = 11 * 300
   return Math.round((otherTeamsBudget - otherTeamsSpent) / 11)
 })
