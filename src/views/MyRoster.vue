@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { myRoster, spent, remaining, marketPremium, undraftPlayer, avgOtherTeamRemaining } from '../stores/draftStore'
+import PositionValueLeft from '../components/PositionValueLeft.vue'
 
 const CORE_SPOTS = 11
 
@@ -114,6 +115,9 @@ function vsMarketText(pricePaid: number, suggested: number, position: string): s
         </div>
       </div>
     </div>
+
+    <!-- How much startable value is still on the board, per position -->
+    <PositionValueLeft />
 
     <table v-if="myRoster.length > 0">
       <thead>

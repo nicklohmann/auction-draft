@@ -53,7 +53,7 @@ export const marketPremium = computed(() => {
 })
 
 export async function loadPlayers() {
-  const response = await fetch('/ktc_auction_final.csv')
+  const response = await fetch('/ktc_auction_final_300.csv')
   const text = await response.text()
   const lines = text.trim().split('\n')
   players.value = lines.slice(1).map(line => {
@@ -63,7 +63,7 @@ export async function loadPlayers() {
       position: values[1],
       team: values[2],
       ktcValue: parseInt(values[3]),
-      value: Math.round(parseInt(values[4]) * 0.6),
+      value: Math.round(parseInt(values[4])),
       drafted: false,
       draftedBy: '',
       pricePaid: 0

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { loadPlayers, remaining, spent } from './stores/draftStore'
+import { marketState, marketMessage } from './stores/marketSignal'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -8,6 +9,17 @@ const router = useRouter()
 onMounted(() => {
   loadPlayers()
 })
+
+// Short label + color for the always-visible chip.
+const chip = () => {
+  switch (marketState.value) {
+    case 'hold': return { text: 'HOLD', color: '#e53935' }
+    case 'watch': return { text: 'PATIENT', color: '#fb8c00' }
+    case 'spend': return { text: 'SPEND', color: '#4fc3f7' }
+    case 'early': return { text: '', color: '' }
+    default: return { text: '', color: '' }
+  }
+}
 </script>
 
 <template>
@@ -16,6 +28,15 @@ onMounted(() => {
     <div class="budget-bar">
       <span>💰 Budget: ${{ remaining }} remaining</span>
       <span>Spent: ${{ spent }}</span>
+
+      <!-- Mini market-state chip: only shows when it's actionable -->
+      <span
+        v-if="chip().text"
+        class="market-chip"
+        :style="{ background: chip().color }"
+        :title="marketMessage"
+      >{{ chip().text }}</span>
+
       <nav>
         <button @click="router.push('/')">Draft Board</button>
         <button @click="router.push('/roster')">My Roster</button>
@@ -53,6 +74,16 @@ onMounted(() => {
 
 .budget-bar button:hover {
   background: #0f3460;
+}
+
+.market-chip {
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #0d1424;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: default;
 }
 
 body {
