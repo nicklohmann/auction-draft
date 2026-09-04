@@ -18,6 +18,7 @@ import { players, budget, spent, myRoster } from './draftStore'
 // Only players at/above this suggested value count toward the signal.
 // Cheaper players fill bench spots for $1–2 and shouldn't drive strategy.
 export const VALUE_FLOOR = 13
+export const VALUE_FLOOR_QB = 1
 
 // League money. 12 teams x $300. Adjust if your league differs.
 export const LEAGUE_BUDGET = 3600
@@ -228,27 +229,29 @@ export interface PositionBoard {
 // Baseline totals per position (fixed — computed from the full pool).
 const positionStartTotals = computed<Record<Pos, number>>(() => {
   const t = { QB: 0, RB: 0, WR: 0, TE: 0 } as Record<Pos, number>
-  for (const p of corePool.value) {
-    if ((POSITIONS as readonly string[]).includes(p.position)) {
-      t[p.position as Pos] += p.value
-    }
+  for (const pos of POSITIONS) {
+    const floor = pos === 'QB' ? VALUE_FLOOR_QB : VALUE_FLOOR
+    const poolForPos = players.value.filter(p => p.position === pos && p.value >= floor)
+    t[pos] = poolForPos.reduce((sum, p) => sum + p.value, 0)
   }
   return t
 })
 
 export const positionBoards = computed<PositionBoard[]>(() =>
   POSITIONS.map(pos => {
-    const left = corePool.value.filter(p => p.position === pos && !p.drafted)
+      // Use QB-specific floor for QBs, universal floor for others
+    const floor = pos === 'QB' ? VALUE_FLOOR_QB : VALUE_FLOOR
+    const left = players.value.filter(p => p.position === pos && !p.drafted && p.value >= floor)
     const valueLeft = left.reduce((s, p) => s + p.value, 0)
     const startTotal = positionStartTotals.value[pos] || 0
     const pctValueLeft = startTotal > 0 ? valueLeft / startTotal : 0
-    // Board is thinning: fewer than ~40% of the room's needed slots remain
-    // available as $13+ players, so supply for this position is drying up.
     const boardThin = left.length <= Math.ceil(positionNeed[pos] * 0.4)
     const youNeed = myPositionNeed.value[pos]
-    // Only tell you to jump in when the board is thinning AND you still have a
-    // spot to fill here. If you've hit your target, scarcity isn't your problem.
-    const scarce = boardThin && youNeed > 0
+    
+    // ONLY flag scarce if we're past the "market forming" phase
+    // (same 8% check as marketHeadline uses)
+    const scarce = boardThin && youNeed > 0 && coreValueDraftedPct.value >= 0.08
+    
     return { pos, playersLeft: left.length, valueLeft, startTotalValue: startTotal, pctValueLeft, boardThin, youNeed, scarce }
   })
 )
