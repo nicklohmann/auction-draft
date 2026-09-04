@@ -52,7 +52,6 @@ function confirmOther(playerName: string) {
           <th>Name</th>
           <th>POS</th>
           <th>Team</th>
-          <th>KTC</th>
           <th>Suggested $</th>
           <th>Action</th>
         </tr>
@@ -62,7 +61,6 @@ function confirmOther(playerName: string) {
           <td>{{ player.name }}</td>
           <td>{{ player.position }}</td>
           <td>{{ player.team }}</td>
-          <td>{{ player.ktcValue }}</td>
           <td>${{ player.value }}</td>
           <td class="actions">
             <input

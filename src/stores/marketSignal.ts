@@ -178,17 +178,17 @@ export type Pos = typeof POSITIONS[number]
 // Roughly how many startable slots the room needs per position, across all
 // teams, once flex and superflex demand is spread in. Tune to your league.
 export const positionNeed: Record<Pos, number> = {
-  QB: 24, // 1 base + heavy superflex share
+  QB: 12, // 1 base + heavy superflex share
   RB: 40,
-  WR: 60,
-  TE: 18,
+  WR: 50,
+  TE: 20,
 }
 
 // How many of each position YOU want to end up with (balanced build). Once you
 // hit these, the "jump in" flag goes quiet for that position — no point warning
 // you about scarcity somewhere you're already set.
 export const myPositionTarget: Record<Pos, number> = {
-  QB: 2,
+  QB: 1,
   RB: 4,
   WR: 5,
   TE: 2,
