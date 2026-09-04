@@ -100,6 +100,47 @@ export const coreValueDraftedPct = computed(() =>
     : 0
 )
 
+// ---- Continuous signal for a bar that builds instead of snapping ----------
+//
+// The state buckets (normal/watch/hold) are for messaging, but a bucket can
+// only ever "flip". For the top bar we want a smooth value that slides every
+// pick, so you SEE pressure building before it becomes actionable.
+//
+// marketTilt: -100 .. +100.
+//   0   = prices right at where they're heading (neutral)
+//   <0  = discounts building (room draining) — the more negative, the more you
+//         should wait; deepens smoothly as buying power erodes
+//   >0  = money piling up (too much cash, too few players) — spend up
+// It's derived directly from buyingPowerIndex, so it moves on every pick.
+export const marketTilt = computed(() => {
+  const idx = buyingPowerIndex.value
+  if (!isFinite(idx)) return 100
+  // Map index around its neutral point (1.0). Scale so the actionable
+  // thresholds (0.9 watch, 0.75 hold, 1.08 spend) land at readable tilt levels.
+  const raw = (idx - 1) * 250 // 0.9 -> -25, 0.75 -> -62, 1.08 -> +20
+  return Math.max(-100, Math.min(100, Math.round(raw)))
+})
+
+// A single headline line that always answers "wait or buy?" in plain terms,
+// scaling its language with how strong the tilt is (soft early, firm later).
+// Kept short so it fits the top bar without truncating.
+export const marketHeadline = computed(() => {
+  const drafted = coreValueDraftedPct.value
+  // Stay neutral until the draft has actually developed — avoids reading
+  // "softening" off tiny rounding noise before anyone has spent.
+  if (drafted < 0.08) return 'Bid to your values'
+
+  const pct = Math.round(suggestedBidMultiplier.value * 100)
+  const tilt = marketTilt.value
+
+  if (tilt >= 20) return 'Cash piling up — spend up'
+  if (tilt >= 8) return 'Fine to buy'
+  if (tilt > -12) return 'Balanced — bid your values'
+  if (tilt > -30) return `Softening — aim ~${pct}% of sheet`
+  if (tilt > -55) return `Discounts building — ~${pct}% of sheet`
+  return `Room dry — bid ~${pct}%, let them come`
+})
+
 // ---- The verdict ----------------------------------------------------------
 
 export type MarketState = 'early' | 'normal' | 'watch' | 'hold' | 'spend'
@@ -148,9 +189,9 @@ export const positionNeed: Record<Pos, number> = {
 // you about scarcity somewhere you're already set.
 export const myPositionTarget: Record<Pos, number> = {
   QB: 2,
-  RB: 2,
-  WR: 4,
-  TE: 1,
+  RB: 4,
+  WR: 5,
+  TE: 2,
 }
 
 // How many of each position you've already rostered.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { loadPlayers, remaining, spent } from './stores/draftStore'
-import { marketState, marketMessage } from './stores/marketSignal'
+import { marketTilt, marketHeadline, coreValueDraftedPct } from './stores/marketSignal'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -10,16 +10,36 @@ onMounted(() => {
   loadPlayers()
 })
 
-// Short label + color for the always-visible chip.
-const chip = () => {
-  switch (marketState.value) {
-    case 'hold': return { text: 'HOLD', color: '#e53935' }
-    case 'watch': return { text: 'PATIENT', color: '#fb8c00' }
-    case 'spend': return { text: 'SPEND', color: '#4fc3f7' }
-    case 'early': return { text: '', color: '' }
-    default: return { text: '', color: '' }
+// Continuous color: green (spend/neutral) -> amber -> red as tilt goes negative.
+// Blends smoothly so the bar WARMS UP over many picks instead of snapping.
+const tiltColor = computed(() => {
+  const t = marketTilt.value // -100..+100
+  if (t >= 0) return '#43a047'            // neutral/positive = green
+  // -1..-100 : interpolate green -> amber -> red
+  const p = Math.min(-t, 100) / 100        // 0..1 how negative
+  // green (67,160,71) -> amber (251,140,0) -> red (229,57,53)
+  let r, g, b
+  if (p < 0.5) {
+    const k = p / 0.5
+    r = Math.round(67 + (251 - 67) * k)
+    g = Math.round(160 + (140 - 160) * k)
+    b = Math.round(71 + (0 - 71) * k)
+  } else {
+    const k = (p - 0.5) / 0.5
+    r = Math.round(251 + (229 - 251) * k)
+    g = Math.round(140 + (57 - 140) * k)
+    b = Math.round(0 + (53 - 0) * k)
   }
-}
+  return `rgb(${r},${g},${b})`
+})
+
+// Needle position along a center-zero track: 50% = neutral, left = wait, right = spend.
+const needlePct = computed(() => 50 + marketTilt.value / 2) // -100..100 -> 0..100
+
+// Fade the whole thing in as the draft gets going (soft early).
+const barOpacity = computed(() =>
+  coreValueDraftedPct.value < 0.1 ? 0.5 : 1
+)
 </script>
 
 <template>
@@ -29,13 +49,17 @@ const chip = () => {
       <span>💰 Budget: ${{ remaining }} remaining</span>
       <span>Spent: ${{ spent }}</span>
 
-      <!-- Mini market-state chip: only shows when it's actionable -->
-      <span
-        v-if="chip().text"
-        class="market-chip"
-        :style="{ background: chip().color }"
-        :title="marketMessage"
-      >{{ chip().text }}</span>
+      <!-- Continuous market read: slides + warms up, no sudden flips -->
+      <div class="market-read" :style="{ opacity: barOpacity }">
+        <div class="mr-track">
+          <div class="mr-center"></div>
+          <div
+            class="mr-needle"
+            :style="{ left: needlePct + '%', background: tiltColor }"
+          ></div>
+        </div>
+        <span class="mr-text" :style="{ color: tiltColor }">{{ marketHeadline }}</span>
+      </div>
 
       <nav>
         <button @click="router.push('/')">Draft Board</button>
@@ -76,14 +100,45 @@ const chip = () => {
   background: #0f3460;
 }
 
-.market-chip {
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: #0d1424;
-  padding: 3px 10px;
+.market-read {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  margin: 0 16px;
+  transition: opacity 0.4s ease;
+}
+.mr-track {
+  position: relative;
+  flex: 0 0 100px;
+  height: 8px;
+  background: linear-gradient(90deg, #e53935 0%, #fb8c00 50%, #43a047 75%, #4fc3f7 100%);
   border-radius: 4px;
-  cursor: default;
+  opacity: 0.35;
+}
+.mr-center {
+  position: absolute;
+  left: 50%;
+  top: -2px; bottom: -2px;
+  width: 1px;
+  background: #cfd8e8;
+  opacity: 0.5;
+}
+.mr-needle {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  transition: left 0.5s ease, background 0.5s ease;
+}
+.mr-text {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.5s ease;
 }
 
 body {

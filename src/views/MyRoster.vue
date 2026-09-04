@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { myRoster, spent, remaining, marketPremium, undraftPlayer, avgOtherTeamRemaining } from '../stores/draftStore'
 import PositionValueLeft from '../components/PositionValueLeft.vue'
 
-const CORE_SPOTS = 11
+const CORE_SPOTS = 9
 
 const positionOrder = ['QB', 'RB', 'WR', 'TE']
 
@@ -18,7 +18,7 @@ const coreRemaining = computed(() => CORE_SPOTS - corePlayersDrafted.value)
 
 const avgPerCoreRemaining = computed(() => {
   if (coreRemaining.value <= 0) return 0
-  const reservedForBench = (27 - CORE_SPOTS) * 1
+  const reservedForBench = (17 - CORE_SPOTS) * 1  // was (27 - CORE_SPOTS)
   const budgetForCore = remaining.value - reservedForBench
   return Math.max(1, Math.round(budgetForCore / coreRemaining.value))
 })
@@ -85,7 +85,7 @@ function vsMarketText(pricePaid: number, suggested: number, position: string): s
       </div>
       <div class="stat">
         <span class="label">Roster Spots Left</span>
-        <span class="value">{{ 27 - myRoster.length }}</span>
+        <span class="value">{{ 17 - myRoster.length }}</span>
       </div>
       <div class="stat highlight">
         <span class="label">Avg $ / Core Player Left</span>
@@ -125,7 +125,6 @@ function vsMarketText(pricePaid: number, suggested: number, position: string): s
           <th>Name</th>
           <th>POS</th>
           <th>Team</th>
-          <th>KTC</th>
           <th>Suggested</th>
           <th>Paid</th>
           <th>vs Suggested</th>
@@ -138,7 +137,6 @@ function vsMarketText(pricePaid: number, suggested: number, position: string): s
           <td>{{ player.name }}</td>
           <td>{{ player.position }}</td>
           <td>{{ player.team }}</td>
-          <td>{{ player.ktcValue }}</td>
           <td>${{ player.value }}</td>
           <td>${{ player.pricePaid }}</td>
           <td :style="{ color: getValueColor(vsValueRatio(player.pricePaid, player.value)), fontWeight: 'bold' }">

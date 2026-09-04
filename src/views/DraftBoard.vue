@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { players, draftPlayer } from '../stores/draftStore'
-import MarketSignalBanner from '../components/MarketSignalBanner.vue'
+import PositionStrip from '../components/PositionStrip.vue'
 
 const search = ref('')
 const positionFilter = ref('ALL')
@@ -31,8 +31,8 @@ function confirmOther(playerName: string) {
   <div class="draft-board">
     <h2>Draft Board</h2>
 
-    <!-- Room-wide hold / spend signal -->
-    <MarketSignalBanner />
+    <!-- Startable ($13+) players left per position -->
+    <PositionStrip />
 
     <div class="filters">
       <input v-model="search" placeholder="Search players..." />
